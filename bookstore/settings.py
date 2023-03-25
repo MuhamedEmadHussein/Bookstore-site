@@ -27,11 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool("DJANGO_DEBUG")
+DEBUG = env.bool("DJANGO_DEBUG",default=False)
 
 ALLOWED_HOSTS = [".herokuapp.com", "localhost", "127.0.0.1"] # new
-
-
 
 # Application definition
 
@@ -41,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    "whitenoise.runserver_nostatic", # new
     'django.contrib.staticfiles',
     
     # Third-party
@@ -48,24 +47,32 @@ INSTALLED_APPS = [
     "crispy_bootstrap5", # new
     "allauth", # new
     "allauth.account", # new
+    "debug_toolbar",  # new
 
     # Local
     'accounts.apps.AccountsConfig',
     'pages.apps.PagesConfig',
+    'books.apps.BooksConfig',
 ]
 
 
 AUTH_USER_MODEL = "accounts.CustomUser" 
 
 MIDDLEWARE = [
+    "django.middleware.cache.UpdateCacheMiddleware", # new
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware", # new
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware", # new
+    "django.middleware.cache.FetchFromCacheMiddleware", # new
 ]
+
+
 
 ROOT_URLCONF = 'bookstore.urls'
 
@@ -144,7 +151,9 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"] 
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage" 
+STATICFILES_STORAGE ="whitenoise.storage.CompressedManifestStaticFilesStorage" # new
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -161,7 +170,14 @@ AUTHENTICATION_BACKENDS = (
 "django.contrib.auth.backends.ModelBackend",
 "allauth.account.auth_backends.AuthenticationBackend",)
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend" # new
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend" # new
+# DEFAULT_FROM_EMAIL = "Mohamed_20208203@fci.helwan.edu.eg"
+# EMAIL_HOST = "smtp.sendgrid.net"
+# EMAIL_HOST_USER = "apikey"
+# EMAIL_HOST_PASSWORD = "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"
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+
 ACCOUNT_SESSION_REMEMBER = True # new
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 
@@ -169,3 +185,25 @@ ACCOUNT_USERNAME_REQUIRED = False # new
 ACCOUNT_AUTHENTICATION_METHOD = "email" # new
 ACCOUNT_EMAIL_REQUIRED = True # new
 ACCOUNT_UNIQUE_EMAIL = True # new
+
+DEFAULT_FROM_EMAIL = "admin@djangobookstore.com" # new
+
+# django-debug-toolbar
+import socket
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS = [ip[:-1] + "1" for ip in ips]
+# ensures that our INTERNAL_IPS matches that of our Docker host.
+CACHE_MIDDLEWARE_ALIAS = "default"
+CACHE_MIDDLEWARE_SECONDS = 604800
+CACHE_MIDDLEWARE_KEY_PREFIX = ""
+
+SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
+SECURE_HSTS_SECONDS = env.int("DJANGO_SECURE_HSTS_SECONDS", default=2592000)  # 30 days
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True)
+SECURE_HSTS_PRELOAD = env.bool("DJANGO_SECURE_HSTS_PRELOAD", default=True)
+SESSION_COOKIE_SECURE = env.bool("DJANGO_SESSION_COOKIE_SECURE", default=True)
+CSRF_COOKIE_SECURE = env.bool("DJANGO_CSRF_COOKIE_SECURE", default=True)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # new
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"  # new
+
+
